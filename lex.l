@@ -9,6 +9,8 @@ void panic(const char *, const char *);
 digit	[0-9]
 n_dec	{digit}*
 ws	[ \t\n]
+binop	[\+\-\*/]
+delim	[{}\[\]()]
 
 %%
 
@@ -17,6 +19,14 @@ ws	[ \t\n]
 	}
 
 {ws}	{}
+
+{binop}	{
+	return yytext[0];
+	}
+
+{delim}	{
+	return yytext[0];
+	}
 
 <<EOF>>	{
 	return YYEOF;

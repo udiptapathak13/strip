@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
 %}
 
 %token NUMERIC
-%token INVALID
 
 %%
 
@@ -46,5 +45,18 @@ start
 	;
 
 expr
-	: NUMERIC
+	: expr '+' term
+	| expr '-' term
+	| term
+	;
+
+term
+	: term '*' factor
+	| term '/' factor
+	| factor
+	;
+
+factor
+	: '(' expr ')'
+	| NUMERIC
 	;
