@@ -53,6 +53,7 @@ expr
 term
 	: term '*' factor
 	| term '/' factor
+	| term '%' factor
 	| factor
 	;
 

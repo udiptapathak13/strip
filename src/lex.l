@@ -9,7 +9,7 @@ void panic(const char *, const char *);
 digit	[0-9]
 n_dec	{digit}*
 ws	[ \t\n]
-binop	[\+\-\*/]
+binop	[\+\-\*/\%]
 delim	[{}\[\]()]
 
 %%
