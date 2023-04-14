@@ -20,7 +20,7 @@ int yywrap()
 int main(int argc, char *argv[])
 {
 	if (argc != 2) {
-		printf("usage: ./strip <file_name>\x0a");
+		printf("usage: strip <file_name>\x0a");
 		exit(EXIT_FAILURE);
 	}
 	if (!freopen(argv[1], "r", stdin)) {
