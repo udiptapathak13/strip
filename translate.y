@@ -23,9 +23,8 @@ int main(int argc, char *argv[])
 		printf("usage: ./strip <file_name>\x0a");
 		exit(EXIT_FAILURE);
 	}
-	freopen(argv[1], "r", stdin);
-	if (!stdin) {
-		printf("Failed to open the file %s\x0a", argv[1]);
+	if (!freopen(argv[1], "r", stdin)) {
+		printf("failed to open the file %s\x0a", argv[1]);
 		exit(EXIT_FAILURE);
 	}
 	yyparse();
@@ -34,13 +33,18 @@ int main(int argc, char *argv[])
 
 %}
 
-%token NUM
+%token NUMERIC
+%token INVALID
 
 %%
 
 start
-	: NUM YYEOF
+	: expr YYEOF
 	{
 	printf("Compilation Successful!\x0a");	
 	}
+	;
+
+expr
+	: NUMERIC
 	;
