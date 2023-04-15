@@ -61,3 +61,5 @@ bool symbolMember(const char *sname)
 	}
 	return itr->end;
 }
+
+#undef MALLOC

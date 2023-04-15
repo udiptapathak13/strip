@@ -10,6 +10,8 @@ typedef union {
 
 typedef struct {
 	int id;
+	int row;
+	int col;
 	TokenAttr attr;
 } Token;
 
