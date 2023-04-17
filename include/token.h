@@ -1,6 +1,18 @@
 #ifndef _TOKEN_H
 #define _TOKEN_H
 
+#include <stdbool.h>
+
+typedef enum {
+	tok_num,
+	tok_id
+} Tokid;
+
+typedef enum {
+	rval,
+	lval
+} Ref;
+
 typedef union {
 	struct {
 		int dtype;
@@ -9,7 +21,7 @@ typedef union {
 } TokenAttr;
 
 typedef struct {
-	int id;
+	Tokid id;
 	int row;
 	int col;
 	TokenAttr attr;

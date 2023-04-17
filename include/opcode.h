@@ -2,6 +2,7 @@
 #define _OPCODE_H
 
 #include <string.h>
+#include <stdlib.h>
 
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
 
