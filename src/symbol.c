@@ -1,7 +1,9 @@
 #include "../include/symbol.h"
 #include <stdlib.h>
 
+#ifndef MALLOC
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
+#endif
 
 char hashChar(char ch)
 {
@@ -15,23 +17,25 @@ char hashChar(char ch)
 	return 63;
 }
 
-symbolNode  *symbolNodeCreate()
+SymbolNode  *symbolNodeCreate()
 {
-	symbolNode *ret = MALLOC(symbolNode, 1);
+	SymbolNode *ret = MALLOC(SymbolNode, 1);
 	for (int i = 0 ; i < 64 ; i++) ret->child[i] = NULL;
 	ret->end = false;
 	return ret;
 }
 
-void symbolInit()
+Symbol *symbolCreate()
 {
-	symbol.root = symbolNodeCreate();
+	Symbol *ret = MALLOC(Symbol, 1);
+	ret->root = symbolNodeCreate();
+	return ret;
 }
 
-void symbolInsert(const char *sname, Token tok)
+void symbolInsert(Symbol *sym, const char *sname, Token tok)
 {
-	symbolNode *itr = symbol.root;
-	symbolNode *ptr;
+	SymbolNode *itr = sym->root;
+	SymbolNode *ptr;
 	int cnt = 0;
 	char curr = sname[cnt];
 	while (curr) {
@@ -46,10 +50,10 @@ void symbolInsert(const char *sname, Token tok)
 	itr->end = true;
 }
 
-bool symbolMember(const char *sname)
+bool symbolMember(Symbol *sym, const char *sname)
 {
-	symbolNode *itr = symbol.root;
-	symbolNode *ptr;
+	SymbolNode *itr = sym->root;
+	SymbolNode *ptr;
 	int cnt = 0;
 	char curr = sname[cnt];
 	while (curr) {
@@ -62,4 +66,17 @@ bool symbolMember(const char *sname)
 	return itr->end;
 }
 
-#undef MALLOC
+void theLastPostOrder(SymbolNode *root)
+{
+	SymbolNode *tmp;
+	for (int i = 0 ; i < 64 ; i++)
+		if (tmp = root->child[i])
+			theLastPostOrder(tmp);
+	free(root);
+}
+
+void symbolDestroy(Symbol *sym)
+{
+	theLastPostOrder(sym->root);
+	free(sym);
+}

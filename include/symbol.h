@@ -4,20 +4,21 @@
 #include <stdbool.h>
 #include "token.h"
 
-struct symbolNode {
+struct SymbolNode {
 	bool end;
 	Token tok;
-	struct symbolNode *child[64];
+	struct SymbolNode *child[64];
 };
 
-typedef struct symbolNode symbolNode;
+typedef struct SymbolNode SymbolNode;
 
-struct {
-	symbolNode *root;
-} symbol;
+typedef struct {
+	SymbolNode *root;
+} Symbol;
 
-void symbolInit();
-void symbolInsert(const char *, Token);
-bool symbolMember(const char *);
+Symbol * symbolCreate();
+void symbolInsert(Symbol *, const char *, Token);
+bool symbolMember(Symbol *, const char *);
+void symbolDestroy(Symbol *);
 
 #endif
