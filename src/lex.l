@@ -1,21 +1,31 @@
 %{
 
 #include "y.tab.h"
+#include <strip/primitive.h>
+#include <strip/token.h>
 
 void panic(const char *, const char *);
 
 %}
 
+small	[a-z]
+big	[A-Z]
+alpha	{small}|{big}
 digit	[0-9]
+alnum	{alpha}|{digit}
 n_dec	{digit}*
 ws	[ \t\n]
 binop	[\+\-\*/\%]
-delim	[{}\[\]()]
+delim	[{}\[\]();]
+id	[alpha_'][alnum_']*
 
 %%
 
 {n_dec}	{
-	return NUMERIC;
+	yylval.expr.ref = rval;
+	yylval.expr.dtype = i64;
+	yylval.expr.val = atoi(yytext);
+	return NUM;
 	}
 
 {ws}	{}
@@ -26,6 +36,10 @@ delim	[{}\[\]()]
 
 {delim}	{
 	return yytext[0];
+	}
+
+{id}	{
+	return ID;
 	}
 
 <<EOF>>	{
