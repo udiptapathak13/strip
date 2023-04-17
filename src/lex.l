@@ -16,14 +16,14 @@ alnum	{alpha}|{digit}
 n_dec	{digit}*
 ws	[ \t\n]
 binop	[\+\-\*/\%]
-delim	[{}\[\]();]
-id	[alpha_'][alnum_']*
+delim	[{}\[\]()=;]
+id	({alpha}|[_'])({alnum}|[_'])*
 
 %%
 
 {n_dec}	{
 	yylval.expr.ref = rval;
-	yylval.expr.dtype = i64;
+	yylval.expr.dtype = u64;
 	yylval.expr.val = atoi(yytext);
 	return NUM;
 	}
@@ -38,10 +38,6 @@ id	[alpha_'][alnum_']*
 	return yytext[0];
 	}
 
-{id}	{
-	return ID;
-	}
-
 <<EOF>>	{
 	return YYEOF;
 	}
@@ -50,4 +46,13 @@ id	[alpha_'][alnum_']*
 	fprintf(stderr, "\x1b[31merror: \x1b[0m"
 			"found an invalid token \x27%s\x27\x0a", yytext);
 	exit(EXIT_FAILURE);
+	}
+
+let	{
+	return LET;
+	}
+
+{id}	{
+	strcpy(yylval.id.name, yytext);
+	return ID;
 	}
