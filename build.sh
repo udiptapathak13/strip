@@ -1,6 +1,6 @@
 sudo mkdir -p /usr/include/strip
 sudo cp -rf include/* /usr/include/strip
-yacc -d src/translate.y
+bison -d src/translate.y
 lex src/lex.l
 mkdir -p tmp
 cd tmp

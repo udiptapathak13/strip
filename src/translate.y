@@ -14,7 +14,11 @@
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
 #endif
 
-int dataCnt = 0, textCnt = 0;
+int dataCnt = 0;
+int textCnt = 0;
+
+extern int row;
+extern int col;
 
 int yyparse();
 int yylex();
@@ -57,8 +61,8 @@ int main(int argc, char *argv[])
 %left '*'
 %left '/'
 %left '%'
-%left '('
-%left ')'
+
+%expect 6
 
 %union
 {
@@ -69,12 +73,19 @@ int main(int argc, char *argv[])
 	} expr;
 	struct {
 		int dtype;
+		int row;
+		int col;
 		uint64_t addr;
 		char name[32];
 	} id;
+	struct {
+		int row;
+		int col;
+	} pos;
 }
 
 %type <expr> expr
+%type <pos> pos
 
 %%
 
@@ -90,7 +101,7 @@ start
 blocks
 	: block blocks
 	| letBlock blocks
-	|
+	| %empty
 	;
 
 block
@@ -99,7 +110,7 @@ block
 
 statements
 	: statement statements
-	|
+	| %empty
 	;
 
 statement
@@ -168,12 +179,13 @@ expr
 			$$.val = $1.val % $3.val;
 		}
 	}
-	| '(' expr ')'
+	| pos '(' expr ')'
 	{
-		$$ = $2;
+		$$ = $3;
 	}
-	| '(' expr
+	| pos '(' expr %expect 6
 	{
+		printf("%d %d\x0a", $1.row, $1.col);
 		panic(E_UNMATCHED_PARENTHESIS);
 	}
 	| NUM
@@ -190,5 +202,13 @@ expr
 			exit(EXIT_FAILURE);
 		}
 		$$.ref = lval;
+	}
+	;
+
+pos
+	: %empty
+	{
+		$$.row = row;
+		$$.col = col;
 	}
 	;
