@@ -9,3 +9,5 @@ ar -rcs libstrip.a *.o
 cd ../
 gcc lex.yy.c y.tab.c -o strip -Ltmp -lstrip
 sudo mv strip /usr/bin
+rm lex.yy.c y.tab.c y.tab.h
+rm -rf tmp
