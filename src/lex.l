@@ -3,8 +3,7 @@
 #include "y.tab.h"
 #include <strip/primitive.h>
 #include <strip/token.h>
-
-void panic(const char *, const char *);
+#include <strip/panic.h>
 
 %}
 
@@ -18,6 +17,7 @@ ws	[ \t\n]
 binop	[\+\-\*/\%]
 delim	[{}\[\]()=;]
 id	({alpha}|[_'])({alnum}|[_'])*
+str	({alnum}|{delim}|{ws}|{binop})*
 
 %%
 
@@ -34,18 +34,19 @@ id	({alpha}|[_'])({alnum}|[_'])*
 	return yytext[0];
 	}
 
+'{str}'	{
+	}
+
+\'{str}	{
+	panic(E_UNTERMINATED_STRING);
+	}
+
 {delim}	{
 	return yytext[0];
 	}
 
 <<EOF>>	{
 	return YYEOF;
-	}
-
-.	{
-	fprintf(stderr, "\x1b[31merror: \x1b[0m"
-			"found an invalid token \x27%s\x27\x0a", yytext);
-	exit(EXIT_FAILURE);
 	}
 
 let	{
@@ -55,4 +56,10 @@ let	{
 {id}	{
 	strcpy(yylval.id.name, yytext);
 	return ID;
+	}
+
+.	{
+	fprintf(stderr, "\x1b[31merror: \x1b[0m"
+			"found an invalid token \x27%s\x27\x0a", yytext);
+	exit(EXIT_FAILURE);
 	}

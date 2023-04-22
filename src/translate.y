@@ -8,6 +8,7 @@
 #include <strip/imc.h>
 #include <strip/symbol.h>
 #include <strip/primitive.h>
+#include <strip/panic.h>
 
 #ifndef MALLOC
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
@@ -30,6 +31,7 @@ int yywrap()
 }
 
 Symbol *global;
+extern char **opcodeString;
 
 int main(int argc, char *argv[])
 {
@@ -37,10 +39,8 @@ int main(int argc, char *argv[])
 		printf("usage: strip <file_name>\x0a");
 		exit(EXIT_FAILURE);
 	}
-	if (!freopen(argv[1], "r", stdin)) {
-		printf("failed to open the file %s\x0a", argv[1]);
-		exit(EXIT_FAILURE);
-	}
+	if (!freopen(argv[1], "r", stdin))
+		panic(E_FAILED_TO_OPEN_FILE);
 	global = symbolCreate();
 	yyparse();
 	return 0;
@@ -57,6 +57,8 @@ int main(int argc, char *argv[])
 %left '*'
 %left '/'
 %left '%'
+%left '('
+%left ')'
 
 %union
 {
@@ -81,6 +83,7 @@ start
 	{
 	printf("Compilation Successful!\x0a");	
 	symbolDestroy(global);
+	imcLog(stdout);
 	}
 	;
 
@@ -130,6 +133,11 @@ expr
 		if ($1.ref == rval && $3.ref == rval) {
 			$$.ref = rval;
 			$$.val = $1.val - $3.val;
+		} else if ($1.ref == lval && $3.ref == lval) {
+			char op1[32], op2[32];
+			sprintf(op1, "D%d", 1);
+			sprintf(op1, "D%d", 2);
+			imcAdd2(op_sub, op1, op2);
 		}
 	}
 	| expr '+' expr
@@ -164,6 +172,10 @@ expr
 	{
 		$$ = $2;
 	}
+	| '(' expr
+	{
+		panic(E_UNMATCHED_PARENTHESIS);
+	}
 	| NUM
 	{
 		$$.ref = yylval.expr.ref;
@@ -174,8 +186,9 @@ expr
 	{
 		if (!symbolMember(global, yylval.id.name)) {
 			fprintf(stderr, "\x1b[31merror:\x1b[0m %s is not denfined\x0a",
-																	yylval.id.name);
+																yylval.id.name);
 			exit(EXIT_FAILURE);
 		}
+		$$.ref = lval;
 	}
 	;
