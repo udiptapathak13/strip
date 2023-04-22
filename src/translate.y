@@ -1,5 +1,7 @@
 %{
 
+#pragma GCC diagnostic ignored "-Wyacc"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -19,6 +21,7 @@ int textCnt = 0;
 
 extern int row;
 extern int col;
+extern int yyleng;
 
 int yyparse();
 int yylex();
@@ -209,6 +212,6 @@ pos
 	: %empty
 	{
 		$$.row = row;
-		$$.col = col;
+		$$.col = col - yyleng;
 	}
 	;
