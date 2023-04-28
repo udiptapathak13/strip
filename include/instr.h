@@ -4,10 +4,12 @@
 #include "opcode.h"
 #include <stdint.h>
 
+typedef uint64_t Operand;
+
 typedef struct {
 	Opcode opc;
-	char *opr1;
-	char *opr2;
+	Operand opr1;
+	Operand opr2;
 } Instr;
 
 #endif

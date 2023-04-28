@@ -1,8 +1,5 @@
 %{
 
-#pragma GCC diagnostic ignored "-Wyacc"
-
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <strip/token.h>
@@ -38,7 +35,8 @@ int yywrap()
 }
 
 Symbol *global;
-extern char **opcodeString;
+
+char *opcodeString[31];
 
 int main(int argc, char *argv[])
 {
@@ -48,8 +46,13 @@ int main(int argc, char *argv[])
 	}
 	if (!freopen(argv[1], "r", stdin))
 		panic(E_FAILED_TO_OPEN_FILE);
+	initOpcStr();
 	global = symbolCreate();
 	yyparse();
+	printf("Compilation Successful!\x0a");
+	symbolDestroy(global);
+	imcDump("out");
+	imcLog("log");
 	return 0;
 }
 
@@ -94,11 +97,6 @@ int main(int argc, char *argv[])
 
 start
 	: blocks YYEOF
-	{
-	printf("Compilation Successful!\x0a");	
-	symbolDestroy(global);
-	imcLog(stdout);
-	}
 	;
 
 blocks
@@ -130,10 +128,13 @@ letStatements
 	;
 
 letStatement
-	: ID '=' expr ';'
+	: pos ID '=' expr ';'
 	{
 	Token t;
 	t.id = tok_id;
+	t.row = $1.row;
+	t.col = $1.col;
+	t.addr = dataCnt++;
 	t.attr.num.dtype = u64;
 	t.attr.num.mut = false;
 	t.addr = dataCnt++;
@@ -147,11 +148,9 @@ expr
 		if ($1.ref == rval && $3.ref == rval) {
 			$$.ref = rval;
 			$$.val = $1.val - $3.val;
-		} else if ($1.ref == lval && $3.ref == lval) {
-			char op1[32], op2[32];
-			sprintf(op1, "D%d", 1);
-			sprintf(op1, "D%d", 2);
-			imcAdd2(op_sub, op1, op2);
+		} else if ($1.ref == lval && $3.ref == rval) {
+			imcAdd(op_load, $1.val, 0);
+			imcAdd(op_sub, $1.val, $3.val);
 		}
 	}
 	| expr '+' expr

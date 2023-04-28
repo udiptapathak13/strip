@@ -8,6 +8,8 @@
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
 #endif
 
+extern char *opcodeString[31];
+
 typedef enum {
 	op_add,
 	op_sub,
@@ -41,6 +43,6 @@ typedef enum {
 	op_int
 } Opcode;
 
-void initOpcStr() __attribute__((constructor));
+void initOpcStr();
 
 #endif

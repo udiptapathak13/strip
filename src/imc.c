@@ -5,7 +5,8 @@
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
 #endif
 
-extern char **opcodeString;
+const uint64_t regEndp = 1 << 4;
+const uint64_t dataEndp = 1 << 16;
 
 Imc imc;
 
@@ -26,31 +27,14 @@ void imcGrow()
 	imc.base = base;
 }
 
-void imcAdd1(Opcode opc, const char *opr)
+void imcAdd(Opcode opc, Operand opr1, Operand opr2)
 {
 	if (imc.size == imc.capacity)
 		imcGrow();
 	Instr *in = MALLOC(Instr, 1);
-	size_t len = strlen(opr) + 1;
 	in->opc = opc;
-	in->opr1 = MALLOC(char, len);
-	strncpy(in->opr1, opr, len);
-	imc.base[imc.size++] = in;
-}
-
-void imcAdd2(Opcode opc, const char *opr1, const char *opr2)
-{
-	if (imc.size == imc.capacity)
-		imcGrow();
-	Instr *in = MALLOC(Instr, 1);
-	size_t len = strlen(opr1) + 1;
-	in->opc = opc;
-	in->opr1 = MALLOC(char, len);
-	strncpy(in->opr1, opr1, len);
-	len = strlen(opr2) + 1;
-	in->opc = opc;
-	in->opr2 = MALLOC(char, len);
-	strncpy(in->opr2, opr2, len);
+	in->opr1 = opr1;
+	in->opr2 = opr2;
 	imc.base[imc.size++] = in;
 }
 
@@ -61,13 +45,33 @@ void imcClear()
 	free(imc.base);
 }
 
-void imcLog(FILE *fptr)
+void imcDump(const char *fname)
 {
+	FILE *fptr = fopen(fname, "w");
+	const int isize = sizeof(Opcode) + (sizeof(Operand) << 1);
+	for (int i = 0 ; i < imc.size ; i++)
+		fwrite(imc.base[i], isize, 1,fptr);
+	fclose(fptr);
+}
+
+FILE *imcFptr;
+
+void logOperand(Operand opr)
+{
+	if (opr < regEndp) fprintf(imcFptr, "R%d", opr);
+	else if (opr < dataEndp) fprintf(imcFptr, "D[%d]", opr - regEndp);
+	else fprintf(imcFptr, "I[%d]", opr - dataEndp);
+}
+
+void imcLog(const char *fname)
+{
+	imcFptr = fopen(fname, "w");
 	for (int i = 0, n = imc.size ; i < n ; i++) {
-		fprintf(fptr, "%d %x] ", imc.base[i]->opc, opcodeString[imc.base[i]->opc]);
-		fprintf(fptr, "%s ", imc.base[i]->opr1);
-		if (imc.base[i]->opr2)
-			fprintf(fptr, "%s ", imc.base[i]->opr2);
-		fprintf(fptr, "\x0a");
+		fprintf(imcFptr, "%s ", opcodeString[imc.base[i]->opc]);
+		logOperand(imc.base[i]->opr1);
+		fprintf(imcFptr, " ");
+		if (imc.base[i]->opr2) logOperand(imc.base[i]->opr2);
+		fprintf(imcFptr, "\x0a");
 	}
+	fclose(imcFptr);
 }

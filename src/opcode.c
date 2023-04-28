@@ -1,13 +1,12 @@
 #include "../include/opcode.h"
 #include <stdio.h>
 
-char *opcodeString[31];
-
 char *strGet(const char *str)
 {
 	size_t len = strlen(str) + 1;
 	char *ret = MALLOC(char, len);
 	strncpy(ret, str, len);
+	ret[len] = 0;
 	return ret;
 }
 
