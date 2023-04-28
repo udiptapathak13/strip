@@ -5,8 +5,8 @@
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
 #endif
 
-const uint64_t regEndp = 1 << 4;
-const uint64_t dataEndp = 1 << 16;
+const addr_t regEndp = 1 << 4;
+const addr_t dataEndp = 1 << 16;
 
 Imc imc;
 
@@ -66,11 +66,16 @@ void logOperand(Operand opr)
 void imcLog(const char *fname)
 {
 	imcFptr = fopen(fname, "w");
+	Instr in;
 	for (int i = 0, n = imc.size ; i < n ; i++) {
+		in = *imc.base[i];
 		fprintf(imcFptr, "%s ", opcodeString[imc.base[i]->opc]);
-		logOperand(imc.base[i]->opr1);
+		if (in.opc == op_movi)
+			fprintf(imcFptr, "%d", in.opr1);
+		else
+			logOperand(in.opr1);
 		fprintf(imcFptr, " ");
-		if (imc.base[i]->opr2) logOperand(imc.base[i]->opr2);
+		if (in.opr2) logOperand(in.opr2);
 		fprintf(imcFptr, "\x0a");
 	}
 	fclose(imcFptr);

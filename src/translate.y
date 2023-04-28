@@ -13,8 +13,8 @@
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
 #endif
 
-int dataCnt = 0;
-int textCnt = 0;
+int dataCnt = 16;
+int textCnt = 1 << 16;
 
 extern int row;
 extern int col;
@@ -62,11 +62,8 @@ int main(int argc, char *argv[])
 %token ID
 %token LET
 
-%left '-'
-%left '+'
-%left '*'
-%left '/'
-%left '%'
+%left '-' '+'
+%left '*' '/' '%'
 
 %expect 6
 
@@ -75,14 +72,14 @@ int main(int argc, char *argv[])
 	struct {
 		int ref;
 		int dtype;
+		uint32_t addr;
 		uint64_t val;
 	} expr;
 	struct {
-		int dtype;
+		uint32_t addr;
+		char name[32];
 		int row;
 		int col;
-		uint64_t addr;
-		char name[32];
 	} id;
 	struct {
 		int row;
@@ -92,6 +89,7 @@ int main(int argc, char *argv[])
 
 %type <expr> expr
 %type <pos> pos
+%type <id> id
 
 %%
 
@@ -128,89 +126,182 @@ letStatements
 	;
 
 letStatement
-	: pos ID '=' expr ';'
+	: id '=' expr ';'
 	{
 	Token t;
 	t.id = tok_id;
 	t.row = $1.row;
 	t.col = $1.col;
-	t.addr = dataCnt++;
 	t.attr.num.dtype = u64;
 	t.attr.num.mut = false;
 	t.addr = dataCnt++;
-	symbolInsert(global, yylval.id.name, t);
+	symbolInsert(global, $1.name, t);
+	}
+	;
+
+id
+	: ID
+	{
+	strcpy($$.name, yylval.id.name);
+	$$.col = yylval.id.col;
+	$$.row = yylval.id.row;
 	}
 	;
 
 expr
 	: expr '-' expr
 	{
-		if ($1.ref == rval && $3.ref == rval) {
-			$$.ref = rval;
-			$$.val = $1.val - $3.val;
-		} else if ($1.ref == lval && $3.ref == rval) {
-			imcAdd(op_load, $1.val, 0);
-			imcAdd(op_sub, $1.val, $3.val);
-		}
+	if ($1.ref == rval && $3.ref == rval) {
+		$$.ref = rval;
+		$$.val = $1.val - $3.val;
+	} else {
+		if ($1.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $1.addr, 0):
+			imcAdd(op_mov, $1.addr, 0);
+		else
+			imcAdd(op_movi, $1.val, 0);
+		if ($3.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $3.addr, 0):
+			imcAdd(op_mov, $3.addr, 0);
+		else
+			imcAdd(op_movi, $3.val, 0);
+		imcAdd(op_sub, textCnt, textCnt + 1);
+		textCnt += 3;
+		$$.ref = lval;
+		$$.addr = textCnt - 1;
+	}
 	}
 	| expr '+' expr
 	{
-		if ($1.ref == rval && $3.ref == rval) {
-			$$.ref = rval;
-			$$.val = $1.val + $3.val;
-		}
+	if ($1.ref == rval && $3.ref == rval) {
+		$$.ref = rval;
+		$$.val = $1.val + $3.val;
+	} else {
+		if ($1.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $1.addr, 0):
+			imcAdd(op_mov, $1.addr, 0);
+		else
+			imcAdd(op_movi, $1.val, 0);
+		if ($3.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $3.addr, 0):
+			imcAdd(op_mov, $3.addr, 0);
+		else
+			imcAdd(op_movi, $3.val, 0);
+		imcAdd(op_add, textCnt, textCnt + 1);
+		textCnt += 3;
+		$$.ref = lval;
+		$$.addr = textCnt - 1;
+	}
 	}
 	| expr '*' expr
 	{
-		if ($1.ref == rval && $3.ref == rval) {
-			$$.ref = rval;
-			$$.val = $1.val * $3.val;
-		}
+	if ($1.ref == rval && $3.ref == rval) {
+		$$.ref = rval;
+		$$.val = $1.val * $3.val;
+	} else {
+		if ($1.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $1.addr, 0):
+			imcAdd(op_mov, $1.addr, 0);
+		else
+			imcAdd(op_movi, $1.val, 0);
+		if ($3.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $3.addr, 0):
+			imcAdd(op_mov, $3.addr, 0);
+		else
+			imcAdd(op_movi, $3.val, 0);
+		imcAdd(op_mul, textCnt, textCnt + 1);
+		textCnt += 3;
+		$$.ref = lval;
+		$$.addr = textCnt - 1;
+	}
 	}
 	| expr '/' expr
 	{
-		if ($1.ref == rval && $3.ref == rval) {
-			$$.ref = rval;
-			$$.val = $1.val / $3.val;
-		}
+	if ($1.ref == rval && $3.ref == rval) {
+		$$.ref = rval;
+		$$.val = $1.val / $3.val;
+	} else {
+		if ($1.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $1.addr, 0):
+			imcAdd(op_mov, $1.addr, 0);
+		else
+			imcAdd(op_movi, $1.val, 0);
+		if ($3.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $3.addr, 0):
+			imcAdd(op_mov, $3.addr, 0);
+		else
+			imcAdd(op_movi, $3.val, 0);
+		imcAdd(op_div, textCnt, textCnt + 1);
+		textCnt += 3;
+		$$.ref = lval;
+		$$.addr = textCnt - 1;
+	}
 	}
 	| expr '%' expr
 	{
-		if ($1.ref == rval && $3.ref == rval) {
-			$$.ref = rval;
-			$$.val = $1.val % $3.val;
-		}
+	if ($1.ref == rval && $3.ref == rval) {
+		$$.ref = rval;
+		$$.val = $1.val % $3.val;
+	} else {
+		if ($1.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $1.addr, 0):
+			imcAdd(op_mov, $1.addr, 0);
+		else
+			imcAdd(op_movi, $1.val, 0);
+		if ($3.ref == lval)
+			$1.addr < dataEndp?
+			imcAdd(op_load, $3.addr, 0):
+			imcAdd(op_mov, $3.addr, 0);
+		else
+			imcAdd(op_movi, $3.val, 0);
+		imcAdd(op_mod, textCnt, textCnt + 1);
+		textCnt += 3;
+		$$.ref = lval;
+		$$.addr = textCnt - 1;
+	}
 	}
 	| pos '(' expr ')'
 	{
-		$$ = $3;
+	$$ = $3;
 	}
 	| pos '(' expr %expect 6
 	{
-		printf("%d %d\x0a", $1.row, $1.col);
-		panic(E_UNMATCHED_PARENTHESIS);
+	printf("%d %d\x0a", $1.row, $1.col);
+	panic(E_UNMATCHED_PARENTHESIS);
 	}
 	| NUM
 	{
-		$$.ref = yylval.expr.ref;
-		$$.dtype = yylval.expr.dtype;
-		$$.val = yylval.expr.val;
+	$$.ref = yylval.expr.ref;
+	$$.dtype = yylval.expr.dtype;
+	$$.val = yylval.expr.val;
+	$$.addr = 0;
 	}
-	| ID
+	| id
 	{
-		if (!symbolMember(global, yylval.id.name)) {
-			fprintf(stderr, "\x1b[31merror:\x1b[0m %s is not denfined\x0a",
-																yylval.id.name);
-			exit(EXIT_FAILURE);
-		}
-		$$.ref = lval;
+	Token *t;
+	if (!(t = symbolMember(global, $1.name))) {
+		fprintf(stderr, "\x1b[31merror:\x1b[0m %s is not denfined\x0a",
+		$1.name);
+		exit(EXIT_FAILURE);
+	}
+	$$.ref = lval;
+	$$.addr = t->addr;
 	}
 	;
 
 pos
 	: %empty
 	{
-		$$.row = row;
-		$$.col = col - yyleng;
+	$$.row = row;
+	$$.col = col - yyleng;
 	}
 	;

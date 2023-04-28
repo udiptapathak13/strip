@@ -5,6 +5,11 @@
 #include <stddef.h>
 #include <stdio.h>
 
+typedef uint32_t addr_t;
+
+extern const addr_t dataEndp;
+extern const addr_t regEndp;
+
 typedef struct {
 	Instr **base;
 	size_t size;

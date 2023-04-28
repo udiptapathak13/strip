@@ -18,7 +18,7 @@ typedef struct {
 
 Symbol * symbolCreate();
 void symbolInsert(Symbol *, const char *, Token);
-bool symbolMember(Symbol *, const char *);
+Token *symbolMember(Symbol *, const char *);
 void symbolDestroy(Symbol *);
 
 #endif

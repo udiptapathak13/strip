@@ -50,7 +50,7 @@ void symbolInsert(Symbol *sym, const char *sname, Token tok)
 	itr->end = true;
 }
 
-bool symbolMember(Symbol *sym, const char *sname)
+Token *symbolMember(Symbol *sym, const char *sname)
 {
 	SymbolNode *itr = sym->root;
 	SymbolNode *ptr;
@@ -63,7 +63,9 @@ bool symbolMember(Symbol *sym, const char *sname)
 		itr = ptr;
 		curr = sname[++cnt];
 	}
-	return itr->end;
+	if(!itr->end) return NULL;
+	return &itr->tok;
+
 }
 
 void theLastPostOrder(SymbolNode *root)

@@ -17,13 +17,9 @@ void initOpcStr()
 	opcodeString[op_mul] = strGet("mul");
 	opcodeString[op_div] = strGet("div");
 	opcodeString[op_mod] = strGet("mod");
-	opcodeString[op_addi] = strGet("addi");
-	opcodeString[op_subi] = strGet("subi");
-	opcodeString[op_muli] = strGet("muli");
-	opcodeString[op_div_ir] = strGet("div_ir");
-	opcodeString[op_div_ri] = strGet("div_ri");
-	opcodeString[op_mod_ir] = strGet("mod_ir");
-	opcodeString[op_mod_ri] = strGet("mod_ri");
+	opcodeString[op_mov] = strGet("mov");
+	opcodeString[op_movi] = strGet("movi");
+	opcodeString[op_sub] = strGet("sub");
 	opcodeString[op_load] = strGet("load");
 	opcodeString[op_store] = strGet("store");
 	opcodeString[op_param] = strGet("param");
