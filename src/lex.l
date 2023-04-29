@@ -25,73 +25,86 @@ bool	true|false
 
 %%
 
-{n_dec}	{
+{n_dec} {
 	col += yyleng;
 	yylval.aexpr.ref = rval;
 	yylval.aexpr.dtype = u64;
 	yylval.aexpr.val = atoi(yytext);
 	return NUM;
-	}
+}
 
-{ws}	{
+{ws} {
 	col++;
-	}
+}
 
-{nl}	{
+{nl} {
 	row++;
 	col = 1;
-	}
+}
 
-{binop}	{
+{binop} {
 	col += yyleng;
 	return yytext[0];
-	}
+}
 
-"<="	{
+"<=" {
 	col += 2;
 	return LE;
-	}
+}
 
-'{str}'	{
+'{str}' {
 	col += yyleng;
-	}
+}
 
-\'{str}	{	
+\'{str} {	
 	panic(E_UNTERMINATED_STRING);
-	}
+}
 
-{delim}	{
+{delim} {
 	col++;
 	return yytext[0];
-	}
+}
 
-<<EOF>>	{
+<<EOF>> {
 	return YYEOF;
-	}
+}
 
-let	{
+let {
 	col += yyleng;
 	return LET;
-	}
+}
 
-if	{
+if {
 	col += yyleng;
 	return IF;
 }
 
-elif	{
+elif {
 	col += yyleng;
 	return ELIF;
 }
 
-else	{
+else {
 	col += yyleng;
 	return ELSE;
 }
 
-bool	{
+bool {
 	return yytext[0] == 't';
 }
+
+loop {
+	return LOOP;
+}
+
+break {
+	return BRK; 
+}
+
+continue {
+	return CNT;
+}
+
 
 {id}	{
 	strcpy(yylval.id.name, yytext);
@@ -99,10 +112,10 @@ bool	{
 	yylval.id.col = col;
 	col += yyleng;
 	return ID;
-	}
+}
 
 .	{
 	fprintf(stderr, "\x1b[31merror: \x1b[0m"
 		"found an invalid token \x27%s\x27\x0a", yytext);
 	exit(EXIT_FAILURE);
-	}
+}

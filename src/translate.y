@@ -71,7 +71,10 @@ int main(int argc, char *argv[])
 %token NE
 %token AND
 %token OR
-
+%token LOOP
+%token CNT
+%token BRK
+ 
 %left LE GE EQ NE '<' '>'
 %left '!' AND OR
 %left '-' '+'
@@ -119,12 +122,13 @@ start
 
 block
 	: '{' body '}'
+	| letBlock
+	| ifBlock
+	| loopBlock
 	;
 
 body
 	: statement body
-	| letBlock body
-	| ifBlock body
 	| block body
 	|
  	;
@@ -412,6 +416,20 @@ elifBlock
 	{
 	$$.blist = NULL;
 	}
+	;
+
+loopBlock
+	: LOOP '{' loopBody '}'
+	{
+	
+	}
+
+loopBody
+	: statement loopBody
+	| block loopBody
+	| CNT ';' loopBody
+	| BRK ';' loopBody
+	|
 	;
 
 pos
