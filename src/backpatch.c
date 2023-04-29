@@ -30,10 +30,9 @@ void BlistPatch(Blist *bl, addr_t addr)
 {
 	Blist *prev, *curr = bl;
 	while (curr) {
-		imc.base[curr->addr]->opr1 = addr;
+		imc.base[curr->addr - dataEndp]->opr1 = addr;
 		prev = curr;
 		curr = curr->next;
 		free(prev);
 	}
-	free(bl);
 }

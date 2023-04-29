@@ -72,10 +72,10 @@ int main(int argc, char *argv[])
 %token AND
 %token OR
 
+%left LE GE EQ NE '<' '>'
+%left '!' AND OR
 %left '-' '+'
 %left '*' '/' '%'
-
-%expect 6
 
 %union
 {
@@ -120,7 +120,8 @@ blocks
 	;
 
 block
-	: statements ';' 
+	: statements ';'
+	| ifBlock
 	;
 
 statements
@@ -289,10 +290,6 @@ aexpr
 	{
 	$$ = $2;
 	}
-	| '(' aexpr %expect 6
-	{
-	panic(E_UNMATCHED_PARENTHESIS);
-	}
 	| NUM
 	{
 	$$.ref = yylval.aexpr.ref;
@@ -322,13 +319,72 @@ bexpr
 	}
 	| bexpr OR bexpr
 	| '!' bexpr
+	{
+	$$ = $2;
+	}
 	| aexpr '>' aexpr
+	{
+	$$.trueList = 0;
+	$$.falseList = 0;
+	}
 	| aexpr LE aexpr
+	{
+	fflush(stdout);
+	if ($1.ref == lval)
+		if($1.addr < dataEndp)
+			imcAdd(op_load, $1.addr, 0);
+		else
+			imcAdd(op_mov, $1.addr, 0);
+	else
+		imcAdd(op_movi, $1.val, 0);
+	if ($3.ref == lval)
+		if($3.addr < dataEndp)
+			imcAdd(op_load, $3.addr, 0);
+		else
+			imcAdd(op_mov, $3.addr, 0);
+	else
+		imcAdd(op_movi, $3.val, 0);
+	imcAdd(op_ge, textCnt + 1, textCnt);
+	$$.val = textCnt + 2;
+	imcAdd(op_jmpif, 0, 0);
+	$$.trueList = BlistCreate(textCnt + 3);
+	imcAdd(op_jmpifn, 0, 0);
+	$$.falseList = BlistCreate(textCnt + 4);
+	textCnt += 5;
+	}
 	| aexpr '<' aexpr
+	{
+	$$.trueList = 0;
+	$$.falseList = 0;
+	}
 	| aexpr GE aexpr
+	{
+	$$.trueList = 0;
+	$$.falseList = 0;
+	}
 	| aexpr EQ aexpr
+	{
+	$$.trueList = 0;
+	$$.falseList = 0;
+	}
 	| aexpr NE aexpr
+	{
+	$$.trueList = 0;
+	$$.falseList = 0;
+	}
 	| '(' bexpr ')'
+	{
+	$$.trueList = 0;
+	$$.falseList = 0;
+	}
+	;
+
+ifBlock
+	: IF bexpr pos block pos
+	{
+	BlistPatch($2.trueList, $3.addr);
+	BlistPatch($2.falseList, $5.addr);
+	}
 	;
 
 pos

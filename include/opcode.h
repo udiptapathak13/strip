@@ -25,6 +25,7 @@ typedef enum {
 	op_ret,
 	op_jmp,
 	op_jmpif,
+	op_jmpifn,
 	op_ge,
 	op_eq,
 	op_neq,

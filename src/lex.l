@@ -47,6 +47,11 @@ bool	true|false
 	return yytext[0];
 	}
 
+"<="	{
+	col += 2;
+	return LE;
+	}
+
 '{str}'	{
 	col += yyleng;
 	}
