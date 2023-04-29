@@ -8,6 +8,7 @@
 #include <strip/symbol.h>
 #include <strip/primitive.h>
 #include <strip/panic.h>
+#include <strip/backpatch.h>
 
 #ifndef MALLOC
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
@@ -61,6 +62,15 @@ int main(int argc, char *argv[])
 %token NUM
 %token ID
 %token LET
+%token IF
+%token ELIF
+%token ELSE
+%token GE
+%token LE
+%token EQ
+%token NE
+%token AND
+%token OR
 
 %left '-' '+'
 %left '*' '/' '%'
@@ -74,7 +84,7 @@ int main(int argc, char *argv[])
 		int dtype;
 		uint32_t addr;
 		uint64_t val;
-	} expr;
+	} aexpr;
 	struct {
 		uint32_t addr;
 		char name[32];
@@ -82,12 +92,18 @@ int main(int argc, char *argv[])
 		int col;
 	} id;
 	struct {
-		int row;
-		int col;
+		uint32_t addr;
 	} pos;
-}
+	struct {
+		void *trueList;
+		void *falseList;
+		int ref;
+		int val;
+	} bexpr;
+} 
 
-%type <expr> expr
+%type <aexpr> aexpr
+%type <bexpr> bexpr
 %type <pos> pos
 %type <id> id
 
@@ -113,7 +129,7 @@ statements
 	;
 
 statement
-	: expr ';'
+	: aexpr ';'
 	;
 
 letBlock
@@ -126,7 +142,7 @@ letStatements
 	;
 
 letStatement
-	: id '=' expr ';'
+	: id '=' aexpr ';'
 	{
 	Token t;
 	t.id = tok_id;
@@ -148,8 +164,8 @@ id
 	}
 	;
 
-expr
-	: expr '-' expr
+aexpr
+	: aexpr '-' aexpr
 	{
 	if ($1.ref == rval && $3.ref == rval) {
 		$$.ref = rval;
@@ -173,7 +189,7 @@ expr
 		$$.addr = textCnt - 1;
 	}
 	}
-	| expr '+' expr
+	| aexpr '+' aexpr
 	{
 	if ($1.ref == rval && $3.ref == rval) {
 		$$.ref = rval;
@@ -197,7 +213,7 @@ expr
 		$$.addr = textCnt - 1;
 	}
 	}
-	| expr '*' expr
+	| aexpr '*' aexpr
 	{
 	if ($1.ref == rval && $3.ref == rval) {
 		$$.ref = rval;
@@ -221,7 +237,7 @@ expr
 		$$.addr = textCnt - 1;
 	}
 	}
-	| expr '/' expr
+	| aexpr '/' aexpr
 	{
 	if ($1.ref == rval && $3.ref == rval) {
 		$$.ref = rval;
@@ -245,7 +261,7 @@ expr
 		$$.addr = textCnt - 1;
 	}
 	}
-	| expr '%' expr
+	| aexpr '%' aexpr
 	{
 	if ($1.ref == rval && $3.ref == rval) {
 		$$.ref = rval;
@@ -269,20 +285,19 @@ expr
 		$$.addr = textCnt - 1;
 	}
 	}
-	| pos '(' expr ')'
+	| '(' aexpr ')'
 	{
-	$$ = $3;
+	$$ = $2;
 	}
-	| pos '(' expr %expect 6
+	| '(' aexpr %expect 6
 	{
-	printf("%d %d\x0a", $1.row, $1.col);
 	panic(E_UNMATCHED_PARENTHESIS);
 	}
 	| NUM
 	{
-	$$.ref = yylval.expr.ref;
-	$$.dtype = yylval.expr.dtype;
-	$$.val = yylval.expr.val;
+	$$.ref = yylval.aexpr.ref;
+	$$.dtype = yylval.aexpr.dtype;
+	$$.val = yylval.aexpr.val;
 	$$.addr = 0;
 	}
 	| id
@@ -298,10 +313,27 @@ expr
 	}
 	;
 
+bexpr
+	: bexpr AND pos bexpr
+	{
+	$$.trueList = $4.trueList;
+	$$.falseList = BlistMerge($1.falseList, $4.falseList);
+	BlistPatch($1.trueList, $3.addr);
+	}
+	| bexpr OR bexpr
+	| '!' bexpr
+	| aexpr '>' aexpr
+	| aexpr LE aexpr
+	| aexpr '<' aexpr
+	| aexpr GE aexpr
+	| aexpr EQ aexpr
+	| aexpr NE aexpr
+	| '(' bexpr ')'
+	;
+
 pos
 	: %empty
 	{
-	$$.row = row;
-	$$.col = col - yyleng;
+	$$.addr = textCnt;
 	}
 	;

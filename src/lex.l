@@ -21,14 +21,15 @@ binop	[\+\-\*/\%]
 delim	[{}\[\]()=;]
 id	({alpha}|[_'])({alnum}|[_'])*
 str	({alnum}|{delim}|{ws}|{binop})*
+bool	true|false
 
 %%
 
 {n_dec}	{
 	col += yyleng;
-	yylval.expr.ref = rval;
-	yylval.expr.dtype = u64;
-	yylval.expr.val = atoi(yytext);
+	yylval.aexpr.ref = rval;
+	yylval.aexpr.dtype = u64;
+	yylval.aexpr.val = atoi(yytext);
 	return NUM;
 	}
 
@@ -67,6 +68,25 @@ let	{
 	col += yyleng;
 	return LET;
 	}
+
+if	{
+	col += yyleng;
+	return IF;
+}
+
+elif	{
+	col += yyleng;
+	return ELIF;
+}
+
+else	{
+	col += yyleng;
+	return ELSE;
+}
+
+bool	{
+	return yytext[0] == 't';
+}
 
 {id}	{
 	strcpy(yylval.id.name, yytext);
