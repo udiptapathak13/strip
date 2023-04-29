@@ -18,10 +18,11 @@ Blist *BlistCreate(addr_t addr)
 
 Blist *BlistMerge(Blist *b1, Blist *b2)
 {
+	if (!b1 || !b2)
+		return (Blist *) ((uint64_t) b1 | (uint64_t) b2);
 	Blist *ptr = b1;
-	while (ptr->next) {
+	while (ptr->next)
 		ptr = ptr->next;
-	}
 	ptr->next = b2;
 	return b1;
 }

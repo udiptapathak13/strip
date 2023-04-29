@@ -109,36 +109,32 @@ int main(int argc, char *argv[])
 %type <bexpr> bexpr
 %type <pos> pos
 %type <id> id
-%type <condBody> ifBody
+%type <condBody> condBody elifBlock
 
 %%
 
 start
-	: blocks YYEOF
-	;
-
-blocks
-	: block blocks
-	| letBlock blocks
-	| %empty
+	: body YYEOF
 	;
 
 block
-	: statements ';'
-	| ifBlock
+	: '{' body '}'
 	;
 
-statements
-	: statement statements
-	| %empty
-	;
+body
+	: statement body
+	| letBlock body
+	| ifBlock body
+	| block body
+	|
+ 	;
 
 statement
 	: aexpr ';'
 	;
 
 letBlock
-	: LET letStatements ';'
+	: LET '{' letStatements '}'
 	;
 
 letStatements
@@ -384,16 +380,16 @@ bexpr
 	;
 
 ifBlock
-	: IF bexpr pos ifBody pos elseBlock pos
+	: IF bexpr pos '{' condBody pos '}' elifBlock pos
 	{
 	BlistPatch($2.trueList, $3.addr);
-	BlistPatch($2.falseList, $5.addr);
-	BlistPatch($4.blist, $7.addr);
+	BlistPatch($2.falseList, $6.addr);
+	BlistPatch($5.blist, $9.addr);
 	}
 	;
 
-ifBody
-	: block
+condBody
+	: body
 	{
 	$$.blist = BlistCreate(textCnt);
 	imcAdd(op_jmp, 0, 0);
@@ -401,13 +397,25 @@ ifBody
 	}
 	;
 
-elseBlock
-	: ELSE block
-	| %empty
+elifBlock
+	: ELIF bexpr pos '{' condBody  pos '}' elifBlock
+	{
+	$$.blist = BlistMerge($5.blist, $8.blist);
+	BlistPatch($2.trueList, $3.addr);
+	BlistPatch($2.falseList, $6.addr);
+	}
+	| ELSE '{' body '}'
+	{
+	$$.blist = NULL;
+	}
+	|
+	{
+	$$.blist = NULL;
+	}
 	;
 
 pos
-	: %empty
+	:
 	{
 	$$.addr = textCnt;
 	}
