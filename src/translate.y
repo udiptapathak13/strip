@@ -109,10 +109,10 @@ int main(int argc, char *argv[])
 } 
 
 %type <aexpr> aexpr
-%type <bexpr> bexpr
+%type <bexpr> bexpr loopBody
 %type <pos> pos
 %type <id> id
-%type <condBody> condBody elifBlock
+%type <condBody> condBody elifBlock brk
 
 %%
 
@@ -419,18 +419,45 @@ elifBlock
 	;
 
 loopBlock
-	: LOOP '{' loopBody '}'
+	: LOOP pos '{' loopBody pos '}'
 	{
-	
+	BlistPatch($4.trueList, $2.addr);
+	BlistPatch($4.falseList, $5.addr);
 	}
 
 loopBody
 	: statement loopBody
+	{
+	$$ = $2;
+	}
 	| block loopBody
+	{
+	$$ = $2;
+	}
 	| CNT ';' loopBody
-	| BRK ';' loopBody
+	{
+	imcAdd(op_jmp, 0, 0);
+	$$.trueList = BlistMerge($$.trueList, BlistCreate(textCnt)); 
+	textCnt++;
+	}
+	| pos brk ';' loopBody
+	{
+	$$.falseList = BlistMerge($4.falseList, BlistCreate($1.addr)); 
+	$$.trueList = $4.trueList;
+	}
 	|
+	{
+	$$.trueList = NULL;
+	$$.falseList = NULL;
+	}
 	;
+
+brk
+	: BRK
+	{
+	imcAdd(op_jmp, 0, 0);
+	textCnt++;
+	}
 
 pos
 	:
