@@ -100,12 +100,16 @@ int main(int argc, char *argv[])
 		int ref;
 		int val;
 	} bexpr;
+	struct {
+		void *blist;
+	} condBody;
 } 
 
 %type <aexpr> aexpr
 %type <bexpr> bexpr
 %type <pos> pos
 %type <id> id
+%type <condBody> ifBody
 
 %%
 
@@ -380,11 +384,26 @@ bexpr
 	;
 
 ifBlock
-	: IF bexpr pos block pos
+	: IF bexpr pos ifBody pos elseBlock pos
 	{
 	BlistPatch($2.trueList, $3.addr);
 	BlistPatch($2.falseList, $5.addr);
+	BlistPatch($4.blist, $7.addr);
 	}
+	;
+
+ifBody
+	: block
+	{
+	$$.blist = BlistCreate(textCnt);
+	imcAdd(op_jmp, 0, 0);
+	textCnt++;
+	}
+	;
+
+elseBlock
+	: ELSE block
+	| %empty
 	;
 
 pos
