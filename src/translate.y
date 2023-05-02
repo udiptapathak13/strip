@@ -338,9 +338,11 @@ elifBlock
 	;
 
 loopBlock
-	: LOOP pos '{' loopBody pos '}'
+	: LOOP pos '{' loopBody pos '}' pos
 	{
-	BlistPatch($4.trueList, $2.addr);
+	imcAdd(op_jmp, $2.addr, 0);
+	Blist *blist = BlistMerge(BlistCreate(imc.last - 1), $4.trueList);
+	BlistPatch(blist, $2.addr);
 	BlistPatch($4.falseList, $5.addr);
 	}
 
