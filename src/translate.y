@@ -21,6 +21,8 @@ extern int row;
 extern int col;
 extern int yyleng;
 
+extern Imc imc;
+
 int yyparse();
 int yylex();
 
@@ -85,7 +87,6 @@ int main(int argc, char *argv[])
 	struct {
 		int ref;
 		int dtype;
-		uint32_t addr;
 		uint64_t val;
 	} aexpr;
 	struct {
@@ -176,22 +177,9 @@ aexpr
 		$$.ref = rval;
 		$$.val = $1.val - $3.val;
 	} else {
-		if ($1.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $1.addr, 0):
-			imcAdd(op_mov, $1.addr, 0);
-		else
-			imcAdd(op_movi, $1.val, 0);
-		if ($3.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $3.addr, 0):
-			imcAdd(op_mov, $3.addr, 0);
-		else
-			imcAdd(op_movi, $3.val, 0);
-		imcAdd(op_sub, textCnt, textCnt + 1);
-		textCnt += 3;
+		imcAexpr(op_sub, $1.ref, $3.ref, $1.val, $3.val);
 		$$.ref = lval;
-		$$.addr = textCnt - 1;
+		$$.val = imc.last - 1;
 	}
 	}
 	| aexpr '+' aexpr
@@ -200,22 +188,9 @@ aexpr
 		$$.ref = rval;
 		$$.val = $1.val + $3.val;
 	} else {
-		if ($1.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $1.addr, 0):
-			imcAdd(op_mov, $1.addr, 0);
-		else
-			imcAdd(op_movi, $1.val, 0);
-		if ($3.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $3.addr, 0):
-			imcAdd(op_mov, $3.addr, 0);
-		else
-			imcAdd(op_movi, $3.val, 0);
-		imcAdd(op_add, textCnt, textCnt + 1);
-		textCnt += 3;
+		imcAexpr(op_add, $1.ref, $3.ref, $1.val, $3.val);
 		$$.ref = lval;
-		$$.addr = textCnt - 1;
+		$$.val = imc.last - 1;
 	}
 	}
 	| aexpr '*' aexpr
@@ -224,22 +199,9 @@ aexpr
 		$$.ref = rval;
 		$$.val = $1.val * $3.val;
 	} else {
-		if ($1.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $1.addr, 0):
-			imcAdd(op_mov, $1.addr, 0);
-		else
-			imcAdd(op_movi, $1.val, 0);
-		if ($3.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $3.addr, 0):
-			imcAdd(op_mov, $3.addr, 0);
-		else
-			imcAdd(op_movi, $3.val, 0);
-		imcAdd(op_mul, textCnt, textCnt + 1);
-		textCnt += 3;
+		imcAexpr(op_mul, $1.ref, $3.ref, $1.val, $3.val);
 		$$.ref = lval;
-		$$.addr = textCnt - 1;
+		$$.val = imc.last - 1;
 	}
 	}
 	| aexpr '/' aexpr
@@ -248,22 +210,9 @@ aexpr
 		$$.ref = rval;
 		$$.val = $1.val / $3.val;
 	} else {
-		if ($1.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $1.addr, 0):
-			imcAdd(op_mov, $1.addr, 0);
-		else
-			imcAdd(op_movi, $1.val, 0);
-		if ($3.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $3.addr, 0):
-			imcAdd(op_mov, $3.addr, 0);
-		else
-			imcAdd(op_movi, $3.val, 0);
-		imcAdd(op_div, textCnt, textCnt + 1);
-		textCnt += 3;
+		imcAexpr(op_div, $1.ref, $3.ref, $1.val, $3.val);
 		$$.ref = lval;
-		$$.addr = textCnt - 1;
+		$$.val = imc.last - 1;
 	}
 	}
 	| aexpr '%' aexpr
@@ -272,22 +221,9 @@ aexpr
 		$$.ref = rval;
 		$$.val = $1.val % $3.val;
 	} else {
-		if ($1.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $1.addr, 0):
-			imcAdd(op_mov, $1.addr, 0);
-		else
-			imcAdd(op_movi, $1.val, 0);
-		if ($3.ref == lval)
-			$1.addr < dataEndp?
-			imcAdd(op_load, $3.addr, 0):
-			imcAdd(op_mov, $3.addr, 0);
-		else
-			imcAdd(op_movi, $3.val, 0);
-		imcAdd(op_mod, textCnt, textCnt + 1);
-		textCnt += 3;
+		imcAexpr(op_div, $1.ref, $3.ref, $1.val, $3.val);
 		$$.ref = lval;
-		$$.addr = textCnt - 1;
+		$$.val = imc.last - 1;
 	}
 	}
 	| '(' aexpr ')'
@@ -299,18 +235,17 @@ aexpr
 	$$.ref = yylval.aexpr.ref;
 	$$.dtype = yylval.aexpr.dtype;
 	$$.val = yylval.aexpr.val;
-	$$.addr = 0;
 	}
 	| id
 	{
 	Token *t;
 	if (!(t = symbolMember(global, $1.name))) {
-		fprintf(stderr, "\x1b[31merror:\x1b[0m %s is not denfined\x0a",
+		fprintf(stderr, "\x1b[31merror:\x1b[0m %s is not defined\x0a",
 		$1.name);
 		exit(EXIT_FAILURE);
 	}
 	$$.ref = lval;
-	$$.addr = t->addr;
+	$$.val = t->addr;
 	}
 	;
 
@@ -333,28 +268,12 @@ bexpr
 	}
 	| aexpr LE aexpr
 	{
-	fflush(stdout);
-	if ($1.ref == lval)
-		if($1.addr < dataEndp)
-			imcAdd(op_load, $1.addr, 0);
-		else
-			imcAdd(op_mov, $1.addr, 0);
-	else
-		imcAdd(op_movi, $1.val, 0);
-	if ($3.ref == lval)
-		if($3.addr < dataEndp)
-			imcAdd(op_load, $3.addr, 0);
-		else
-			imcAdd(op_mov, $3.addr, 0);
-	else
-		imcAdd(op_movi, $3.val, 0);
-	imcAdd(op_ge, textCnt + 1, textCnt);
-	$$.val = textCnt + 2;
+	imcAexpr(op_ge, $3.ref, $1.ref, $3.val, $1.val);
+	$$.val = imc.last;
+	$$.trueList = BlistCreate(imc.last);
 	imcAdd(op_jmpif, 0, 0);
-	$$.trueList = BlistCreate(textCnt + 3);
+	$$.falseList = BlistCreate(imc.last);
 	imcAdd(op_jmpifn, 0, 0);
-	$$.falseList = BlistCreate(textCnt + 4);
-	textCnt += 5;
 	}
 	| aexpr '<' aexpr
 	{
@@ -456,12 +375,11 @@ brk
 	: BRK
 	{
 	imcAdd(op_jmp, 0, 0);
-	textCnt++;
 	}
 
 pos
 	:
 	{
-	$$.addr = textCnt;
+	$$.addr = imc.last;
 	}
 	;

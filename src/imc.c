@@ -15,6 +15,7 @@ void imcInit()
 	imc.base = MALLOC(Instr *, 1);
 	imc.size = 0;
 	imc.capacity = 1;
+	imc.last = dataEndp;
 }
 
 void imcGrow()
@@ -36,6 +37,7 @@ void imcAdd(Opcode opc, Operand opr1, Operand opr2)
 	in->opr1 = opr1;
 	in->opr2 = opr2;
 	imc.base[imc.size++] = in;
+	imc.last++;
 }
 
 void imcClear()
@@ -79,4 +81,21 @@ void imcLog(const char *fname)
 		fprintf(imcFptr, "\x0a");
 	}
 	fclose(imcFptr);
+}
+
+void imcAexpr(Opcode opc, Ref ref1, Ref ref2, word val1, word val2)
+{
+	if (ref1 == lval)
+		val1 < dataEndp?
+		imcAdd(op_load, val1, 0):
+		imcAdd(op_mov, val1, 0);
+	else
+		imcAdd(op_movi, val1, 0);
+	if (ref2 == lval)
+		val1 < dataEndp?
+		imcAdd(op_load, val2, 0):
+		imcAdd(op_mov, val2, 0);
+	else
+		imcAdd(op_movi, val2, 0);
+	imcAdd(opc, imc.last - 2, imc.last - 1);
 }
