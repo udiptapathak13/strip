@@ -9,7 +9,7 @@
 #include <strip/primitive.h>
 #include <strip/panic.h>
 #include <strip/backpatch.h>
-#include <string/mio.h>
+#include <strip/mio.h>
 
 #ifndef MALLOC
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
