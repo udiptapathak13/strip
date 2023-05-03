@@ -10,6 +10,7 @@
 #include <strip/panic.h>
 #include <strip/backpatch.h>
 #include <strip/mio.h>
+#include <strip/block.h>
 
 #ifndef MALLOC
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
