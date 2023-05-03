@@ -9,6 +9,7 @@
 #include <strip/primitive.h>
 #include <strip/panic.h>
 #include <strip/backpatch.h>
+#include <string/mio.h>
 
 #ifndef MALLOC
 #define MALLOC(x,y) (x *) malloc(y * sizeof(x))
@@ -256,15 +257,27 @@ bexpr
 	$$.falseList = BlistMerge($1.falseList, $4.falseList);
 	BlistPatch($1.trueList, $3.addr);
 	}
-	| bexpr OR bexpr
+	| bexpr OR pos bexpr
+	{
+	$$.falseList = $4.falseList;
+	$$.trueList = BlistMerge($1.trueList, $4.trueList);
+	BlistPatch($1.falseList, $3.addr);
+	}
 	| '!' bexpr
 	{
-	$$ = $2;
+	$$.trueList = $2.falseList;
+	$$.falseList = $2.trueList;
+	$$.val = $2.val;
+	$$.ref = $2.ref;
 	}
 	| aexpr '>' aexpr
 	{
-	$$.trueList = 0;
-	$$.falseList = 0;
+	imcAexpr(op_gr, $1.ref, $3.ref, $1.val, $3.val);
+	$$.val = imc.last;
+	$$.trueList = BlistCreate(imc.last);
+	imcAdd(op_jmpif, 0, 0);
+	$$.falseList = BlistCreate(imc.last);
+	imcAdd(op_jmpifn, 0, 0);
 	}
 	| aexpr LE aexpr
 	{
@@ -277,23 +290,41 @@ bexpr
 	}
 	| aexpr '<' aexpr
 	{
-	$$.trueList = 0;
-	$$.falseList = 0;
+	imcAexpr(op_gr, $3.ref, $1.ref, $3.val, $1.val);
+	$$.val = imc.last;
+	$$.trueList = BlistCreate(imc.last);
+	imcAdd(op_jmpif, 0, 0);
+	$$.falseList = BlistCreate(imc.last);
+	imcAdd(op_jmpifn, 0, 0);
 	}
 	| aexpr GE aexpr
 	{
-	$$.trueList = 0;
-	$$.falseList = 0;
+
+	imcAexpr(op_ge, $1.ref, $3.ref, $1.val, $3.val);
+	$$.val = imc.last;
+	$$.trueList = BlistCreate(imc.last);
+	imcAdd(op_jmpif, 0, 0);
+	$$.falseList = BlistCreate(imc.last);
+	imcAdd(op_jmpifn, 0, 0);
 	}
 	| aexpr EQ aexpr
 	{
-	$$.trueList = 0;
-	$$.falseList = 0;
+	imcAexpr(op_eq, $1.ref, $3.ref, $1.val, $3.val);
+	$$.val = imc.last;
+	$$.trueList = BlistCreate(imc.last);
+	imcAdd(op_jmpif, 0, 0);
+	$$.falseList = BlistCreate(imc.last);
+	imcAdd(op_jmpifn, 0, 0);
 	}
 	| aexpr NE aexpr
 	{
-	$$.trueList = 0;
-	$$.falseList = 0;
+
+	imcAexpr(op_neq, $1.ref, $3.ref, $1.val, $3.val);
+	$$.val = imc.last;
+	$$.trueList = BlistCreate(imc.last);
+	imcAdd(op_jmpif, 0, 0);
+	$$.falseList = BlistCreate(imc.last);
+	imcAdd(op_jmpifn, 0, 0);
 	}
 	| '(' bexpr ')'
 	{

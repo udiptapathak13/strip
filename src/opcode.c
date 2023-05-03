@@ -29,6 +29,7 @@ void initOpcStr()
 	opcodeString[op_jmpif] = strGet("jmpif");
 	opcodeString[op_jmpifn] = strGet("jmpifn");
 	opcodeString[op_ge] = strGet("ge");
+	opcodeString[op_gr] = strGet("gr");
 	opcodeString[op_eq]  = strGet("eq");
 	opcodeString[op_neq] = strGet("neq");
 	opcodeString[op_inc] = strGet("inc");

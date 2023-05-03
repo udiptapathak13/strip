@@ -47,9 +47,44 @@ bool	true|false
 	return yytext[0];
 }
 
+"<" {
+	col += 2;
+	return '<';
+}
+
+">" {
+	col += 2;
+	return '>';
+}
+
 "<=" {
 	col += 2;
 	return LE;
+}
+
+">=" {
+	col += 2;
+	return GE;
+}
+
+"==" {
+	col += 2;
+	return EQ;
+}
+
+"!=" {
+	col += 2;
+	return NE;
+}
+
+"&&"	{
+	col += 2;
+	return AND;
+}
+
+"||"	{
+	col += 2;
+	return OR;
 }
 
 '{str}' {
